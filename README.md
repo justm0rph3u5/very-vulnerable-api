@@ -1,4 +1,4 @@
-# vulnapi
+# Very Vulnerable API
 Intentionaly very vulnerable API with bonus extremely bad coding practices
 
 *NOTE: This is by design a vulnerable application. It's primary use is to demonstrate bad coding practices (in python3) and in operations (docker, etc) and to show off specific vulnerabilities that are not well presented in some other projects. Another use if to have an application that can be used as a demo for various devsecops methods*
