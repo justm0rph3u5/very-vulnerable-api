@@ -7,9 +7,9 @@ import logging
 from fastapi import Depends, FastAPI, HTTPException, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
-from pydantic import BaseModel
 from starlette.status import HTTP_401_UNAUTHORIZED
 from starlette.requests import Request
+from pydantic import BaseModel, validator
 
 SECRET_KEY = "123456"
 ALGORITHM = "HS256"
@@ -20,6 +20,8 @@ accounts_db = json.loads(open("data/accounts.json").read())
 users_db = json.loads(open("data/users.json").read())
 sqldb = sqlite3.connect("data/data.sqlite")
 pp = pprint.PrettyPrinter(depth=4)
+# Simulated database storage for feedback
+feedback_db = []
 
 
 class Token(BaseModel):
@@ -52,13 +54,30 @@ class Accounts(BaseModel):
     username: str
     amount: float
 
+class ArticleFeedback(BaseModel):
+    article_id: int
+    feedback_text: str
 
+class ArticleFeedback(BaseModel):
+    article_id: int
+    feedback_text: str
+
+    # Validator to check word count
+    @validator('feedback_text')
+    def validate_word_count(cls, v):
+        word_count = len(v.split())
+        if word_count > 100:
+            raise ValueError('Feedback must be 100 words or less')
+        return v
+        
+        
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 app = FastAPI()
 
 
 def verify_password(plain_password, hashed_password):
+
     return pwd_context.verify(plain_password, hashed_password)
 
 
@@ -90,6 +109,16 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+def print_password_and_hash(plain_password):
+    hashed_password = get_password_hash(plain_password)
+    print(f"Plaintext Password: {plain_password}")
+    print(f"Hashed Password: {hashed_password}")
+
+# Example usage:
+print_password_and_hash('your_plaintext_password')
+
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -224,8 +253,42 @@ async def dump_usersdb():
 async def dump_accounts():
     return accounts_db
 
+@app.get("/hash_password/")
+async def hash_password_endpoint(plain_password: str):
+    hashed_password = get_password_hash(plain_password)
+    return {
+        "Plaintext Password": plain_password,
+        "Hashed Password": hashed_password
+    }
 
+# Your endpoint function
+@app.post("/submit_article_feedback/")
+async def submit_article_feedback(feedback: ArticleFeedback, current_user: User = Depends(get_current_active_user)):
+    # Append the feedback to the global feedback_db list
+    feedback_db.append({
+        "username": current_user.username,
+        "article_id": feedback.article_id,
+        "feedback_text": feedback.feedback_text
+    })
+
+    # This list comprehension should be inside the function
+    # It filters all feedback entries for the given article_id
+    all_feedback_for_article = [
+        {"username": f["username"], "feedback_text": f["feedback_text"]}
+        for f in feedback_db
+        if f["article_id"] == feedback.article_id
+    ]
+    
+    # Make sure that this return statement is at the same level of indentation as the list comprehension
+    # and the other code inside the function
+    return {
+        "status": "success",
+        "message": "Your feedback has been submitted",
+        "all_feedback_for_this_article": all_feedback_for_article
+    }
 @app.get("/")
 async def main(request: Request):
     pp.pprint(dict(request.headers))
     return {"info": "Visit the /docs endpoint for the OpenAPI UI"}
+
+
