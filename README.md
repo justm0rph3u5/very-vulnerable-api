@@ -14,6 +14,7 @@ Current implemented vulns:
 * RCE via deserialization
 * SQL injection
 * File inclusion / path traversal
+* API6:2023 - Unrestricted Access to Sensitive Business Flows: /submit_article_feedback/
 
 
 Usage:
