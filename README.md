@@ -22,3 +22,7 @@ Usage:
 * open http://IP_OF_HOST:8000/docs in a webbrowser. 
 
 Pull requests, especially for cool, subtle bugs or bad practices are welcome. At least FastAPI makes it easy to implement examples. 
+
+
+Reference:
+- Forked repo from https://github.com/tkisason/vulnapi. Thanks to respective authors
